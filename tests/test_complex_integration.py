@@ -1,5 +1,3 @@
-import pytest
-
 from src.manager import Manager
 from src.models import Parameters
 from src.models import Bill
@@ -11,8 +9,7 @@ def test_get_apartment_costs_integration():
     assert manager.get_apartment_costs('apart-polanka', 2025, 1) == 910.0
     assert manager.get_apartment_costs('apart-polanka', 2025, 2) == 0.0
     assert manager.get_apartment_costs('apart-polanka', 2025, 12) == 0.0
-    with pytest.raises(ValueError):
-        manager.get_apartment_costs('non-existing', 2025, 1)
+    assert manager.get_apartment_costs('non-existing', 2025, 1) is None
 
 def test_apartment_costs_with_optional_parameters():
     manager = Manager(Parameters())
