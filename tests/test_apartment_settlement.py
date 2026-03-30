@@ -1,4 +1,3 @@
-import pytest
 from src.manager import Manager
 from src.models import Parameters, Bill, ApartmentSettlement
 

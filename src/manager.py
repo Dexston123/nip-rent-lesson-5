@@ -1,4 +1,4 @@
-from src.models import Apartment, Bill, Parameters, Tenant, Transfer, ApartmentSettlement
+from src.models import Apartment, Bill, Parameters, Tenant, Transfer, ApartmentSettlement, TenantSettlement
 
 class Manager:
     def __init__(self, parameters: Parameters):
@@ -37,19 +37,43 @@ class Manager:
         return sum(bill.amount_pln for bill in matching_bills)
     
     def create_apartment_settlement(self, apartment_key, year, month):
-        total_bills = sum(
-            bill.amount_pln
-            for bill in self.bills
-            if bill.apartment == apartment_key
-            and bill.settlement_year == year
-            and bill.settlement_month == month
+        bills_total = sum(
+            b.amount_pln for b in self.bills
+            if b.apartment == apartment_key and b.settlement_year == year and b.settlement_month == month
         )
-
+        rent_total = sum(
+            t.rent_pln for t in self.tenants.values()
+            if t.apartment == apartment_key
+        )
+        total_due = bills_total + rent_total
         return ApartmentSettlement(
             apartment=apartment_key,
             month=month,
             year=year,
-            total_rent_pln=0.0,
-            total_bills_pln=total_bills,
-            total_due_pln=total_bills
+            total_rent_pln=rent_total,
+            total_bills_pln=bills_total,
+            total_due_pln=total_due
         )
+
+    def create_tenant_settlements(self, apartment_key, year, month):
+        apartment_settlement = self.create_apartment_settlement(apartment_key, year, month)
+        tenants = [(k, t) for k, t in self.tenants.items() if t.apartment == apartment_key]
+        settlements = []
+        if not tenants:
+            return settlements
+        cost_per_tenant = apartment_settlement.total_bills_pln / len(tenants)
+        for tenant_key, t in tenants:
+            total_due = cost_per_tenant + t.rent_pln
+            balance = t.deposit_pln - total_due
+            ts = TenantSettlement(
+                tenant=tenant_key,
+                apartment_settlement=apartment_key,
+                year=year,
+                month=month,
+                bills_pln=cost_per_tenant,
+                rent_pln=t.rent_pln,
+                total_due_pln=total_due,
+                balance_pln=balance
+            )
+            settlements.append(ts)
+        return settlements
